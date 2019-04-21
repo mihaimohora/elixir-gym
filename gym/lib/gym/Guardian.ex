@@ -26,10 +26,10 @@ defmodule GYM.Guardian do
         {:noreply, state}
     end
 
-    def handle_info({:DOWN, _ref, :process, _pid, reason}, state) do
+    def handle_info({:DOWN, _ref, :process, pid, reason}, state) do
         if reason == :killed do
             GYM.Receptionist.checkout(GYM.Receptionist)
-            :ok = IO.puts("Checked client out forcefully")
+            :ok = IO.puts("Checked client #{inspect pid} out forcefully")
         end
         {:noreply, state}
     end
