@@ -16,22 +16,35 @@ defmodule GYM.Guardian do
     end
 
     def init(:ok) do
-        {:ok, []}
+        clients = %{}
+        {:ok, clients}
     end
 
-    def handle_cast({:client_in, name}, state) do
-        {:ok, pid} = DynamicSupervisor.start_child(GYM.ClientSystem, GYM.Client)
-        Process.monitor(pid)
-        send(pid, name)
-        {:noreply, state}
+    def handle_cast({:client_in, name}, clients) do
+        client = Map.fetch(clients, name)
+        clients = if client == :error do
+                    {:ok, pid} = DynamicSupervisor.start_child(GYM.ClientSystem, GYM.Client)
+                    Process.monitor(pid)
+                    send(pid, name)
+                    Map.put(clients, name, pid)
+                  else
+                    :ok = IO.puts("Client #{name} is already in the gym!")
+                    clients
+                  end
+        {:noreply, clients}
     end
 
-    def handle_info({:DOWN, _ref, :process, pid, reason}, state) do
+    def handle_info({:DOWN, _ref, :process, pid, reason}, clients) do
+        client = Enum.find(clients, fn {_key, val} -> val == pid end)
+        clients = if client != nil do
+            {key, _value} = client
+            Map.delete(clients, key)
+        end
         if reason == :killed do
             GYM.Receptionist.checkout(GYM.Receptionist)
             :ok = IO.puts("Checked client #{inspect pid} out forcefully")
         end
-        {:noreply, state}
+        {:noreply, clients}
     end
 
     def handle_info(_msg, state) do
