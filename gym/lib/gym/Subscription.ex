@@ -27,6 +27,9 @@ defmodule GYM.Subscription do
     get_entrances(subscription)
   end
 
+@doc """
+renew the subscription:  set the nr of available entrances back to 10
+"""
   def renew_subscription(subscription) do
     Agent.update(subscription, fn _entrances -> 10 end)
   end

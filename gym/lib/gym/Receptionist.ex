@@ -37,37 +37,41 @@ defmodule GYM.Receptionist do
         result = lookup_subscription(server, name)
         if result != :error do
             {:ok, pid} = result
-            :ok = IO.puts("Found your subscription!")
+            :ok = IO.puts("Found #{name}'s subscription!")
             available_entrances = GYM.Subscription.get_entrances(pid)
-            if available_entrances > 0 do
-                GYM.Subscription.decrease_entrances(pid)
-            else
-                :ok = IO.puts("You have no entrances left! We will renew your subscription for you")
+            
+            if available_entrances <= 0 do
+                :ok = IO.puts("#{name} has no entrances left! We will renew the subscription!")
                 GYM.Subscription.renew_subscription(pid)
                 GYM.Subscription.decrease_entrances(pid)
             end
         else
-            :ok = IO.puts("You have no subscription! We will create one for you")
+            :ok = IO.puts("#{name} has no subscription! We will create one using this name!")
             create_subscription(server, name)
-            {:ok, pid} = lookup_subscription(server, name)
-            GYM.Subscription.decrease_entrances(pid)
         end
 
+        {:ok, pid} = lookup_subscription(server, name)
         first_available_instructor = get_first_available_instructor(server)
-        if first_available_instructor != nil do
+        result = if first_available_instructor != nil do
+            GYM.Subscription.decrease_entrances(pid)
             {key, value} = first_available_instructor
-            :ok = IO.puts("Found you an instructor: " <> "#{key}")
+            :ok = IO.puts("#{name}, we found you an available instructor: #{key}")
             GYM.Instructor.receive_student(value)
+            :checkedIn
         else
-            :ok = IO.puts("You will have to enter without an instructor!")
+            :ok = IO.puts("#{name}, there is no instructor available, please come back later!!")
+            :error
         end
-        :ok
+        result
     end
 
     @doc """
-    checks a client out and releases an instructor
+    checks a client out and releases an instructor - the first one that has active students
     """
-    def checkout(server) do
+    def checkout(server, name \\ "default") do
+        if name != "default" do
+            IO.puts("#{name} is leaving")
+        end
         first_busy_instructor = get_first_busy_instructor(server)
         if first_busy_instructor != nil do
             {key, value} = first_busy_instructor
@@ -85,7 +89,7 @@ defmodule GYM.Receptionist do
 
     defp get_first_available_instructor(server) do
         instructors = get_instructors(server)
-        instructor = Enum.find(instructors, fn {_key, value} -> GYM.Instructor.get_active_students(value) < 4 end)
+        instructor = Enum.find(instructors, fn {_key, value} -> GYM.Instructor.get_active_students(value) < 1 end)
         instructor
     end
 

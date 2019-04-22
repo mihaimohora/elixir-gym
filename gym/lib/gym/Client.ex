@@ -8,10 +8,15 @@ defmodule GYM.Client do
     def get_client_to_instructor() do
         IO.puts("#{inspect self()}" <> ": Send name!")
         receive do
-            name -> IO.puts(name)
-            GYM.Receptionist.checkin(GYM.Receptionist, name)
-            :timer.sleep(20000)
-            GYM.Receptionist.checkout(GYM.Receptionist)
+            name -> IO.puts("#{inspect self()} got this name: " <> name)
+            response = GYM.Receptionist.checkin(GYM.Receptionist, name)
+            if response == :checkedIn do
+        
+                :timer.sleep(20000)
+                GYM.Receptionist.checkout(GYM.Receptionist, name)
+            else
+                IO.puts("#{name}: I will come back later!")
+            end
         end
         
     end
