@@ -39,11 +39,10 @@ defmodule GYM.Receptionist do
             {:ok, pid} = result
             :ok = IO.puts("Found #{name}'s subscription!")
             available_entrances = GYM.Subscription.get_entrances(pid)
-            
+         
             if available_entrances <= 0 do
                 :ok = IO.puts("#{name} has no entrances left! We will renew the subscription!")
                 GYM.Subscription.renew_subscription(pid)
-                GYM.Subscription.decrease_entrances(pid)
             end
         else
             :ok = IO.puts("#{name} has no subscription! We will create one using this name!")

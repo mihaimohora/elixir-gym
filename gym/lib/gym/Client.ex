@@ -11,7 +11,6 @@ defmodule GYM.Client do
             name -> IO.puts("#{inspect self()} got this name: " <> name)
             response = GYM.Receptionist.checkin(GYM.Receptionist, name)
             if response == :checkedIn do
-        
                 :timer.sleep(20000)
                 GYM.Receptionist.checkout(GYM.Receptionist, name)
             else
